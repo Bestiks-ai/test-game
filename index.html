@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>КЛАСС ПРЕВОСХОДСТВА НОВЕЛЛА</title>
+    <!-- Yandex Games SDK - Standard loader required by Clause 1.19.1 -->
+    <script src="https://sdk.games.yandex.net/sdk/v2"></script>
+    <script>
+      window.yandexSDKReady = false;
+      window.yandexSDKInstance = null;
+      window.ysdk = null;
+      window.yandexAdError = null;
+
+      async function initYandexSDK() {
+        if (window.yandexSDKReady) return;
+        console.log("[Yandex SDK] Initializing...");
+        try {
+          if (typeof YaGames !== 'undefined') {
+            const ysdk = await YaGames.init();
+            window.ysdk = ysdk;
+            window.yandexSDKInstance = ysdk;
+            window.yandexSDKReady = true;
+            console.log("[Yandex SDK] Initialization successful!");
+          } else {
+            console.warn("[Yandex SDK] YaGames global variable is undefined.");
+          }
+        } catch (err) {
+          console.error("[Yandex SDK] Init error:", err);
+          window.yandexAdError = err?.message || String(err);
+        }
+      }
+
+      // Safe fallback loaders if network fails
+      function getSDKFromQuery() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          return params.get('sdk');
+        } catch (e) {
+          const match = window.location.search.match(/[?&]sdk=([^&]+)/);
+          return match ? decodeURIComponent(match[1]) : null;
+        }
+      }
+
+      function injectSDKScript(src, next) {
+        console.log("[Yandex SDK Dynamic Fallback] Fetching: " + src);
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = () => {
+          if (typeof YaGames !== 'undefined') {
+            initYandexSDK();
+          } else if (next) {
+            next();
+          }
+        };
+        script.onerror = () => {
+          if (next) next();
+        };
+        document.head.appendChild(script);
+      }
+
+      window.addEventListener('load', () => {
+        // Prevent all right-clicks on the main game canvas (clause 1.6.2.7)
+        document.addEventListener('contextmenu', e => e.preventDefault(), { capture: true });
+
+        // Force disable mobile swipe page pull refresh gestures (clause 1.10.2)
+        document.addEventListener('touchmove', e => {
+          if (e.scale !== 1 || (e.touches && e.touches.length > 1)) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+
+        if (typeof YaGames !== 'undefined') {
+          initYandexSDK();
+        } else {
+          // If first script was blocked, try dynamic fallbacks
+          const sdkParam = getSDKFromQuery();
+          const loaders = [];
+          if (sdkParam) {
+            loaders.push(sdkParam);
+          }
+          loaders.push("/sdk.js");
+          loaders.push("https://yastatic.net/games/sdk/v2");
+          loaders.push("https://yandex.ru/games/sdk/v2");
+
+          let index = 0;
+          function tryNext() {
+            if (index >= loaders.length) return;
+            injectSDKScript(loaders[index++], tryNext);
+          }
+          tryNext();
+        }
+      });
+    </script>
+    <script type="module" crossorigin src="./assets/index-l5_NlTCw.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-mPkEn4i6.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+

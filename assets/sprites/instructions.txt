@@ -1,0 +1,7 @@
+# Сюда складывать спрайты персонажей во весь рост
+# Например:
+# horikita_neutral.png
+# horikita_happy.png
+# sakura_sad.png
+# kushida_angry.png
+# и т.д.
