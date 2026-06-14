@@ -66,7 +66,7 @@
 
         // Force disable mobile swipe page pull refresh gestures (clause 1.10.2)
         document.addEventListener('touchmove', e => {
-          if (e.scale !== 1 || (e.touches && e.touches.length > 1)) {
+          if ((e.scale !== undefined && e.scale !== 1) || (e.touches && e.touches.length > 1)) {
             e.preventDefault();
           }
         }, { passive: false });
@@ -93,8 +93,8 @@
         }
       });
     </script>
-    <script type="module" crossorigin src="./assets/index-Cq_zWGzt.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-fJJf3pcJ.css">
+    <script type="module" crossorigin src="./assets/index-BaAWrA-T.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CWE4CC5g.css">
   </head>
   <body>
     <div id="root"></div>
