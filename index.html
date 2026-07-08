@@ -1,11 +1,51 @@
-<!doctype html>
-<html lang="ru">
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>КЛАСС ПРЕВОСХОДСТВА НОВЕЛЛА</title>
-    <!-- Yandex Games SDK - Standard loader required by Clause 1.19.1 -->
-    <script src="https://sdk.games.yandex.net/sdk/v2"></script>
+    <title>МЕЖЗВЕЗДНЫЙ ВИХРЬ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        background-color: #050011;
+        font-family: 'Rajdhani', sans-serif;
+        touch-action: none; /* Prevent pull-to-refresh on mobile */
+      }
+      .font-cyber {
+        font-family: 'Orbitron', sans-serif;
+      }
+      /* Hide scrollbar for Chrome, Safari and Opera globally */
+      *::-webkit-scrollbar {
+        display: none !important;
+      }
+      /* Hide scrollbar for IE, Edge and Firefox globally */
+      * {
+        -ms-overflow-style: none !important;  /* IE and Edge */
+        scrollbar-width: none !important;  /* Firefox */
+      }
+      /* Prevent image dragging and highlight selection globally */
+      img {
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        -webkit-user-drag: none !important;
+        user-drag: none !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <!-- Yandex Games SDK (п. 1.19.1) -->
+    <script src="https://yandex.ru/games/sdk/v3"></script>
     <script>
       window.yandexSDKReady = false;
       window.yandexSDKInstance = null;
@@ -14,7 +54,7 @@
 
       async function initYandexSDK() {
         if (window.yandexSDKReady) return;
-        console.log("[Yandex SDK] Initializing...");
+        console.log("[Yandex SDK] Attempting initialization...");
         try {
           if (typeof YaGames !== 'undefined') {
             const ysdk = await YaGames.init();
@@ -22,82 +62,69 @@
             window.yandexSDKInstance = ysdk;
             window.yandexSDKReady = true;
             console.log("[Yandex SDK] Initialization successful!");
+            try {
+              document.dispatchEvent(new CustomEvent('yandex-sdk-ready', { detail: ysdk }));
+            } catch (evErr) {
+              console.warn("Could not dispatch registration event:", evErr);
+            }
           } else {
-            console.warn("[Yandex SDK] YaGames global variable is undefined.");
+            console.warn("[Yandex SDK] YaGames global variable is undefined during initYandexSDK call.");
+            loadBackupLocalSDK();
           }
         } catch (err) {
-          console.error("[Yandex SDK] Init error:", err);
+          console.error("[Yandex SDK] Initialization error handler:", err);
           window.yandexAdError = err?.message || String(err);
+          loadBackupLocalSDK();
         }
       }
 
-      // Safe fallback loaders if network fails
-      function getSDKFromQuery() {
-        try {
-          const params = new URLSearchParams(window.location.search);
-          return params.get('sdk');
-        } catch (e) {
-          const match = window.location.search.match(/[?&]sdk=([^&]+)/);
-          return match ? decodeURIComponent(match[1]) : null;
-        }
-      }
-
-      function injectSDKScript(src, next) {
-        console.log("[Yandex SDK Dynamic Fallback] Fetching: " + src);
+      function loadBackupLocalSDK() {
+        if (window.yandexSDKReady) return;
+        console.log("[Yandex SDK] Loading local development mock...");
         const script = document.createElement('script');
-        script.src = src;
-        script.async = true;
-        script.onload = () => {
+        script.src = "/sdk.js";
+        script.onload = async () => {
           if (typeof YaGames !== 'undefined') {
-            initYandexSDK();
-          } else if (next) {
-            next();
+            const ysdk = await YaGames.init();
+            window.ysdk = ysdk;
+            window.yandexSDKInstance = ysdk;
+            window.yandexSDKReady = true;
+            document.dispatchEvent(new CustomEvent('yandex-sdk-ready', { detail: ysdk }));
           }
-        };
-        script.onerror = () => {
-          if (next) next();
         };
         document.head.appendChild(script);
       }
 
       window.addEventListener('load', () => {
-        // Prevent all right-clicks on the main game canvas (clause 1.6.2.7)
-        document.addEventListener('contextmenu', e => e.preventDefault(), { capture: true });
-
-        // Force disable mobile swipe page pull refresh gestures (clause 1.10.2)
-        document.addEventListener('touchmove', e => {
-          if ((e.scale !== undefined && e.scale !== 1) || (e.touches && e.touches.length > 1)) {
-            e.preventDefault();
-          }
-        }, { passive: false });
-
         if (typeof YaGames !== 'undefined') {
           initYandexSDK();
         } else {
-          // If first script was blocked, try dynamic fallbacks
-          const sdkParam = getSDKFromQuery();
-          const loaders = [];
-          if (sdkParam) {
-            loaders.push(sdkParam);
-          }
-          loaders.push("/sdk.js");
-          loaders.push("https://yastatic.net/games/sdk/v2");
-          loaders.push("https://yandex.ru/games/sdk/v2");
-
-          let index = 0;
-          function tryNext() {
-            if (index >= loaders.length) return;
-            injectSDKScript(loaders[index++], tryNext);
-          }
-          tryNext();
+          loadBackupLocalSDK();
         }
       });
     </script>
-    <script type="module" crossorigin src="./assets/index-BaAWrA-T.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CWE4CC5g.css">
-  </head>
+
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.0/",
+    "react": "https://esm.sh/react@^19.2.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.553.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.0/",
+    "@react-three/postprocessing": "https://esm.sh/@react-three/postprocessing@^3.0.4",
+    "@react-three/fiber": "https://esm.sh/@react-three/fiber@^9.4.0",
+    "zustand": "https://esm.sh/zustand@^5.0.8",
+    "uuid": "https://esm.sh/uuid@^13.0.0",
+    "@react-three/drei": "https://esm.sh/@react-three/drei@^10.7.7",
+    "three": "https://esm.sh/three@^0.181.1",
+    "postprocessing": "https://esm.sh/postprocessing@^6.38.0"
+  }
+}
+</script>
+  <script type="module" crossorigin src="./assets/index-D6_bYvFS.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-zZ45S33W.css">
+</head>
   <body>
     <div id="root"></div>
-  </body>
+</body>
 </html>
-
